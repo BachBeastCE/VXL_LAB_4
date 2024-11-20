@@ -1,0 +1,5 @@
+../Core/Src/lab4.c:10:6:initLab4	1
+../Core/Src/lab4.c:18:6:oneshotLed	1
+../Core/Src/lab4.c:22:6:turnOnLedRed	1
+../Core/Src/lab4.c:25:6:turnOnLedYellow	1
+../Core/Src/lab4.c:28:6:turnOnLedGreen	1
