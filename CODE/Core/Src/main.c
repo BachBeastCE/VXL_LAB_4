@@ -24,6 +24,7 @@
 #include "global.h"
 #include "lab4.h"
 #include "fsm_automatic.h"
+#include "fsm_manual.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -58,7 +59,10 @@ static void MX_TIM2_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+void run_all(){
+	run_automatic();
+	run_manual();
+}
 /* USER CODE END 0 */
 
 /**
@@ -101,8 +105,10 @@ int main(void)
 
   SCH_Init();
 
-  SCH_Add_Task(run_automatic, 1000, 1000);
+  SCH_Add_Task(getKeyInput, 500 , 10);
+  SCH_Add_Task(run_all, 1000, 1000);
   SCH_Add_Task(run7SEG, 2000, 125);
+
 
   while (1)
   {

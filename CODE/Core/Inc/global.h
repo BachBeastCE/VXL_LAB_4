@@ -67,7 +67,7 @@ extern int time_green;
 
 //DEFINE FUNTION
 
-void INIT_GPIO(void);
+void GPIO_Init(void);
 void ResetLight1();
 void ResetLight2();
 void RedLight1();

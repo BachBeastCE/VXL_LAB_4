@@ -10,9 +10,6 @@ int count1 =0;
 int count2 =0;
 
 
-//timer 0 blink led
-//timer 1 Dem den
-
 void displayCounter(){
 	led_buffer[0]=count1/10;
 	led_buffer[1]=count1%10;
@@ -36,12 +33,12 @@ void run_automatic(){
 							status1 = GREEN_LED_AUTO;
 							count1 = time_green;
 						}
-//						if (isButtonPressed(modify_button)==1){
-//							status1 = RED_GREEN_MAN;
-//							status2 = RED_LED_SET;
-//							setTimer(1, 10000); //10 giây không nhấn
-//							count1 = 10;
-//						}
+						if (isButtonPressed(modify_button)==1){
+							status1 = RED_GREEN_MAN;
+							status2 = RED_LED_SET;
+							count1 = 10;
+							count2 = 1;
+						}
 //						if (isButtonPressed(mode_button)==1){
 //							setTimer(1, 1000);
 //							status1 = RED_LED_SET;
