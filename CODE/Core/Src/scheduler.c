@@ -4,12 +4,12 @@
 
 // THE ARRAY OF TASK
 static sTask SCH_tasks_G[SCH_MAX_TASKS];
-uint8_t current_index_task;
 //static uint8_t array_Of_Task_ID[SCH_MAX_TASKS];
-//static uint32_t newTaskID = 0;
+static uint32_t newTaskID = 0;
 //static uint32_t rearQueue = 0;
-//static uint32_t count_SCH_Update = 0;
-
+static uint32_t count_SCH_Update = 0;
+static uint32_t Get_New_Task_ID(void);
+uint8_t current_index_task;
 //static uint32_t Get_New_Task_ID(void);
 //static void TIMER_Init(void);
 
@@ -18,6 +18,15 @@ uint8_t Error_code_G ;
 uint8_t Error_port ;
 uint8_t Last_error_code_G;
 uint32_t Error_tick_count_G;
+
+static uint32_t Get_New_Task_ID(void) {
+   newTaskID++;
+   if (newTaskID == NO_TASK_ID)
+   {
+      newTaskID++;
+   }
+   return newTaskID;
+}
 
 void SCH_Init(){
 	uint8_t i;
@@ -32,87 +41,132 @@ void SCH_Init(){
 	 MX_IWDG_Init(); //Watchdog init
 }
 
+
+
 void SCH_Update(void){
-	uint32_t Index;
-	  //NOTE: calculations are in *TICKS* (not milliseconds)
-	for (Index = 0; Index <SCH_MAX_TASKS; Index++) {
-	  // Check if there is a task at this location
-		if (SCH_tasks_G[Index].pTask){
-			if (SCH_tasks_G[Index].Delay == 0) {
-				  // The task is due to run
-				  // Inc. the ’RunMe’ flag
-				SCH_tasks_G[Index].RunMe+= 1;
-				if (SCH_tasks_G[Index].Period) {
-					  // Schedule periodic tasks to run again
-					SCH_tasks_G[Index].Delay = SCH_tasks_G[Index].Period;
-				}
-			} else {
-				  // Not yet ready to run: just decrement the delay
-				SCH_tasks_G[Index].Delay --;
-			}
-		}
-	}
+    // check if there is a task at this location
+    count_SCH_Update++;
+    if (SCH_tasks_G[0].pTask && SCH_tasks_G[0].RunMe == 0)
+    {
+       if (SCH_tasks_G[0].Delay > 0)
+       {
+          SCH_tasks_G[0].Delay = SCH_tasks_G[0].Delay - 1;
+       }
+       if (SCH_tasks_G[0].Delay == 0)
+       {
+          SCH_tasks_G[0].RunMe = 1;
+       }
+    }
 	Watchdog_Refresh();
 }
 
 uint32_t SCH_Add_Task(void(* pFunction)(), uint32_t DELAY, uint32_t PERIOD){
-	uint32_t Index = 0;
-	// First find a gap in the array (if there is one)
- while ((SCH_tasks_G[Index].pTask != 0) && (Index < SCH_MAX_TASKS))
- 	 {
-	 	 Index++;
- 	 }
- // Havewe reached the end of the list?
- if (Index ==SCH_MAX_TASKS){
- // Task list is full
- // Set the global error variable
- Error_code_G=ERROR_SCH_TOO_MANY_TASKS;
-  // Also return an error code
- return SCH_MAX_TASKS;
- }
- // If we’re here, there is a space in the task array
- SCH_tasks_G[Index].pTask = pFunction;
- SCH_tasks_G[Index].Delay = DELAY / TICK;
- SCH_tasks_G[Index].Period = PERIOD / TICK;
- SCH_tasks_G[Index].RunMe = 0;
- SCH_tasks_G[Index].TaskID = Index;
- // return position of task (to allow later deletion)
- return Index;
+    uint8_t newTaskIndex = 0;
+    uint32_t sumDelay = 0;
+    uint32_t newDelay = 0;
+    for (newTaskIndex = 0; newTaskIndex < SCH_MAX_TASKS; newTaskIndex++)
+    {
+       sumDelay = sumDelay + SCH_tasks_G[newTaskIndex].Delay;
+       if (sumDelay > DELAY)
+       {
+          newDelay = DELAY - (sumDelay - SCH_tasks_G[newTaskIndex].Delay);
+          SCH_tasks_G[newTaskIndex].Delay = sumDelay - DELAY;
+          for (uint8_t i = SCH_MAX_TASKS - 1; i > newTaskIndex; i--)
+          {
+             SCH_tasks_G[i].pTask = SCH_tasks_G[i - 1].pTask;
+             SCH_tasks_G[i].Period = SCH_tasks_G[i - 1].Period;
+             SCH_tasks_G[i].Delay = SCH_tasks_G[i - 1].Delay;
+             SCH_tasks_G[i].TaskID = SCH_tasks_G[i - 1].TaskID;
+          }
+          SCH_tasks_G[newTaskIndex].pTask = pFunction;
+          SCH_tasks_G[newTaskIndex].Delay = newDelay;
+          SCH_tasks_G[newTaskIndex].Period = PERIOD;
+
+          if (SCH_tasks_G[newTaskIndex].Delay == 0)
+          {
+             SCH_tasks_G[newTaskIndex].RunMe = 1;
+          }
+          else
+          {
+             SCH_tasks_G[newTaskIndex].RunMe = 0;
+          }
+          SCH_tasks_G[newTaskIndex].TaskID = Get_New_Task_ID();
+          return SCH_tasks_G[newTaskIndex].TaskID;
+       }
+       else
+       {
+          if (SCH_tasks_G[newTaskIndex].pTask == 0x0000)
+          {
+             SCH_tasks_G[newTaskIndex].pTask = pFunction;
+             SCH_tasks_G[newTaskIndex].Delay = DELAY - sumDelay;
+             SCH_tasks_G[newTaskIndex].Period = PERIOD;
+             if (SCH_tasks_G[newTaskIndex].Delay == 0)
+             {
+                SCH_tasks_G[newTaskIndex].RunMe = 1;
+             }
+             else
+             {
+                SCH_tasks_G[newTaskIndex].RunMe = 0;
+             }
+             SCH_tasks_G[newTaskIndex].TaskID = Get_New_Task_ID();
+             return SCH_tasks_G[newTaskIndex].TaskID;
+          }
+       }
+    }
+    return SCH_tasks_G[newTaskIndex].TaskID;
 }
 
 uint8_t SCH_Delete_Task(uint32_t TASK_INDEX){
-	uint8_t Return_code;
-	if (SCH_tasks_G[TASK_INDEX].pTask == 0) {
-	 // No task at this location ...
-	 // Set the global error variable
-	 Error_code_G = ERROR_SCH_CANNOT_DELETE_TASK;
-	 // ... also return an error code
-	 Return_code = RETURN_ERROR;
-	 } else {
-	 Return_code = RETURN_NORMAL;
-	 }
-	 SCH_tasks_G[TASK_INDEX].pTask = 0x0000;
-	 SCH_tasks_G[TASK_INDEX]. Delay = 0;
-	 SCH_tasks_G[TASK_INDEX]. Period = 0;
-	 SCH_tasks_G[TASK_INDEX].RunMe = 0;
-	 return Return_code; // return status
+    uint8_t Return_code = 0;
+    uint8_t taskIndex;
+    uint8_t j;
+
+    if (TASK_INDEX != NO_TASK_ID)
+    {
+       for (taskIndex = 0; taskIndex < SCH_MAX_TASKS; taskIndex++)
+       {
+          if (SCH_tasks_G[taskIndex].TaskID == TASK_INDEX)
+          {
+             Return_code = 1;
+             if (taskIndex != 0 && taskIndex < SCH_MAX_TASKS - 1)
+             {
+                if (SCH_tasks_G[taskIndex + 1].pTask != 0x0000)
+                {
+                   SCH_tasks_G[taskIndex + 1].Delay += SCH_tasks_G[taskIndex].Delay;
+                }
+             }
+             for (j = taskIndex; j < SCH_MAX_TASKS - 1; j++)
+             {
+                SCH_tasks_G[j].pTask = SCH_tasks_G[j + 1].pTask;
+                SCH_tasks_G[j].Period = SCH_tasks_G[j + 1].Period;
+                SCH_tasks_G[j].Delay = SCH_tasks_G[j + 1].Delay;
+                SCH_tasks_G[j].RunMe = SCH_tasks_G[j + 1].RunMe;
+                SCH_tasks_G[j].TaskID = SCH_tasks_G[j + 1].TaskID;
+             }
+             SCH_tasks_G[j].pTask = 0;
+             SCH_tasks_G[j].Period = 0;
+             SCH_tasks_G[j].Delay = 0;
+             SCH_tasks_G[j].RunMe = 0;
+             SCH_tasks_G[j].TaskID = 0;
+             return Return_code = 0;
+          }
+       }
+    }
+    return Return_code; // return status
 }
 
 void SCH_Dispatch_Task(void){
-	// Dispatches (runs) the next task (if one is ready)
-	uint8_t Index;
-	 // Dispatches (runs) the next task (if one is ready)
-	for (Index = 0; Index <SCH_MAX_TASKS; Index++){
-		if (SCH_tasks_G[Index].RunMe> 0) {
-			(*SCH_tasks_G[Index].pTask)(); // Run the task
-			SCH_tasks_G[Index].RunMe--; // Reset / reduceRunMe flag
-			// Periodic tasks will automatically run again
-			// − if this is a ’one shot’ task, remove it from the array
-			if (SCH_tasks_G[Index].Period == 0){
-				SCH_Delete_Task(Index);
-			}
-		}
-	}
+    if (SCH_tasks_G[0].RunMe > 0)
+    {
+       (*SCH_tasks_G[0].pTask)(); // Run the task
+       SCH_tasks_G[0].RunMe = 0;  // Reset RunMe
+       sTask temtask = SCH_tasks_G[0];
+       SCH_Delete_Task(temtask.TaskID);
+       if (temtask.Period != 0)
+       {
+          SCH_Add_Task(temtask.pTask, temtask.Period, temtask.Period);
+       }
+    }
 	// Report system status
 	SCH_Report_Status();
 	// The scheduler enters idlemode at this point
