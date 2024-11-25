@@ -70,5 +70,4 @@ void run_manual(){
 	default:
 		break;
 	}
-	//count1--;
 }

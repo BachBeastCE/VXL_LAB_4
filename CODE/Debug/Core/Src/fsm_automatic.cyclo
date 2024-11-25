@@ -1,2 +1,2 @@
-../Core/Src/fsm_automatic.c:13:6:displayCounter	1
-../Core/Src/fsm_automatic.c:20:6:run_automatic	16
+../Core/Src/fsm_automatic.c:14:6:displayCounter	1
+../Core/Src/fsm_automatic.c:21:6:run_automatic	20

@@ -2,6 +2,7 @@
 "./Core/Src/button.o"
 "./Core/Src/fsm_automatic.o"
 "./Core/Src/fsm_manual.o"
+"./Core/Src/fsm_setting.o"
 "./Core/Src/global.o"
 "./Core/Src/lab4.o"
 "./Core/Src/main.o"

@@ -60,6 +60,7 @@ extern int lockcount1;
 extern int lockcount2;
 extern int count1;
 extern int count2;
+extern int count3;
 
 extern int time_red;
 extern int time_yellow; // red = green + yellow

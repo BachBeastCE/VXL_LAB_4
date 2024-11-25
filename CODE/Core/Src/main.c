@@ -25,6 +25,7 @@
 #include "lab4.h"
 #include "fsm_automatic.h"
 #include "fsm_manual.h"
+#include "fsm_setting.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -106,7 +107,9 @@ int main(void)
   SCH_Init();
 
   SCH_Add_Task(getKeyInput, 500 , 10);
-  SCH_Add_Task(run_all, 1000, 1000);
+  SCH_Add_Task(run_automatic, 1000, 1000);
+  SCH_Add_Task(run_manual, 1000, 100);
+  SCH_Add_Task(run_setting, 1000, 100);
   SCH_Add_Task(run7SEG, 2000, 125);
 
 

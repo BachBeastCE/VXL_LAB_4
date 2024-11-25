@@ -8,6 +8,7 @@ int status1 =INIT;
 int status2 =INIT;
 int count1 =0;
 int count2 =0;
+int count3 =0;
 
 
 void displayCounter(){
@@ -39,15 +40,15 @@ void run_automatic(){
 							count1 = 10;
 							count2 = 1;
 						}
-//						if (isButtonPressed(mode_button)==1){
-//							setTimer(1, 1000);
-//							status1 = RED_LED_SET;
-//							status2 = RED_LED_SET;
-//							count1 = 2; //Mode
-//							count2 = time_red; //Value
-//							ResetLight1();
-//							ResetLight2();
-//						}
+						if (isButtonPressed(mode_button)==1){
+							count3=1;
+							status1 = RED_LED_SET;
+							status2 = RED_LED_SET;
+							count1 = 2; //Mode
+							count2 = time_red; //Value
+							ResetLight1();
+							ResetLight2();
+						}
 						break;
 					}
 				case YELLOW_LED_AUTO:{
@@ -104,7 +105,8 @@ void run_automatic(){
 					default:
 							break;
 				}
-		count1--;
-		count2--;
+		if((status1/30)!=1)count1--;
+		if((status2/30)!=1)count2--;
+		if((status1/30)==1)count3--;
 }
 
