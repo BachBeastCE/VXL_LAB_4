@@ -29,19 +29,21 @@
 
 // DEEFINE RETURN
 #define RETURN_ERROR -1;
-#define RETURN_NORMAL 0;
+#define RETURN_SUCCCES 0;
 
 // STRUCT TASK
 #define TICK 10 //tick = 10ms
-#define NO_TASK_ID 0
+#define NO_TASK_ID 0 // ID = [1;MAX_SCH_TASK]
 #define SCH_MAX_TASKS 40
+
+
 
 typedef struct{
     void (* pTask)(void);
     uint32_t Delay;
     uint32_t Period;
     uint8_t RunMe;
-    uint32_t TaskID;
+    uint16_t TaskID;
 } sTask;
 
 // FUNTION

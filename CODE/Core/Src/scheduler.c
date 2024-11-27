@@ -1,23 +1,18 @@
 #include "scheduler.h"
 
+//SCHEDULER STATIC VARIABLE
+static sTask SCH_tasks_G[SCH_MAX_TASKS]; //CIRCULAR QUEUE
+//static uint16_t array_Of_Task_ID[SCH_MAX_TASKS];
+static uint16_t newTaskID = 0;
+//static uint16_t count_SCH_Update = 0;
+static uint8_t Error_code_G= 0;
+static uint8_t Last_error_code_G = 0;
+static uint8_t Error_port = 0;
+static uint16_t Error_tick_count_G = 0;
 
 
-// THE ARRAY OF TASK
-static sTask SCH_tasks_G[SCH_MAX_TASKS];
-//static uint8_t array_Of_Task_ID[SCH_MAX_TASKS];
-static uint32_t newTaskID = 0;
-//static uint32_t rearQueue = 0;
-static uint32_t count_SCH_Update = 0;
-static uint32_t Get_New_Task_ID(void);
-uint8_t current_index_task;
-//static uint32_t Get_New_Task_ID(void);
+//SCHEDULER STATIC FUNCTION
 //static void TIMER_Init(void);
-
-// ERROR CODE
-uint8_t Error_code_G ;
-uint8_t Error_port ;
-uint8_t Last_error_code_G;
-uint32_t Error_tick_count_G;
 
 static uint32_t Get_New_Task_ID(void) {
    newTaskID++;
@@ -30,7 +25,7 @@ static uint32_t Get_New_Task_ID(void) {
 
 void SCH_Init(){
 	uint8_t i;
-	for (i = 0; i <SCH_MAX_TASKS; i++) {
+	for (i = 1; i <= SCH_MAX_TASKS; i++) {
 		SCH_Delete_Task(i);
 	}
 	 // Reset the global error variable
@@ -45,7 +40,7 @@ void SCH_Init(){
 
 void SCH_Update(void){
     // check if there is a task at this location
-    count_SCH_Update++;
+    //count_SCH_Update++;
     if (SCH_tasks_G[0].pTask && SCH_tasks_G[0].RunMe == 0)
     {
        if (SCH_tasks_G[0].Delay > 0)
@@ -61,10 +56,13 @@ void SCH_Update(void){
 }
 
 uint32_t SCH_Add_Task(void(* pFunction)(), uint32_t DELAY, uint32_t PERIOD){
-    uint8_t newTaskIndex = 0;
+	DELAY = DELAY/TICK ;
+	PERIOD = PERIOD /TICK;
+	uint16_t newTaskIndex = 0;
     uint32_t sumDelay = 0;
     uint32_t newDelay = 0;
-    for (newTaskIndex = 0; newTaskIndex < SCH_MAX_TASKS; newTaskIndex++)
+
+    for (newTaskIndex ; newTaskIndex < SCH_MAX_TASKS; newTaskIndex++)
     {
        sumDelay = sumDelay + SCH_tasks_G[newTaskIndex].Delay;
        if (sumDelay > DELAY)
@@ -116,18 +114,19 @@ uint32_t SCH_Add_Task(void(* pFunction)(), uint32_t DELAY, uint32_t PERIOD){
     return SCH_tasks_G[newTaskIndex].TaskID;
 }
 
-uint8_t SCH_Delete_Task(uint32_t TASK_INDEX){
-    uint8_t Return_code = 0;
-    uint8_t taskIndex;
-    uint8_t j;
+uint8_t SCH_Delete_Task(uint32_t TaskID)
+{
+    uint16_t Return_code = RETURN_SUCCCES;
+    uint16_t taskIndex;
+    uint16_t j;
 
-    if (TASK_INDEX != NO_TASK_ID)
+    if (TaskID != NO_TASK_ID)
     {
        for (taskIndex = 0; taskIndex < SCH_MAX_TASKS; taskIndex++)
        {
-          if (SCH_tasks_G[taskIndex].TaskID == TASK_INDEX)
+          if (SCH_tasks_G[taskIndex].TaskID == TaskID)
           {
-             Return_code = 1;
+             Return_code = RETURN_ERROR; //ERROR FLAG
              if (taskIndex != 0 && taskIndex < SCH_MAX_TASKS - 1)
              {
                 if (SCH_tasks_G[taskIndex + 1].pTask != 0x0000)
@@ -148,7 +147,7 @@ uint8_t SCH_Delete_Task(uint32_t TASK_INDEX){
              SCH_tasks_G[j].Delay = 0;
              SCH_tasks_G[j].RunMe = 0;
              SCH_tasks_G[j].TaskID = 0;
-             return Return_code = 0;
+             return Return_code = 0; //IF SUCCESS RETURN_CODE = 0
           }
        }
     }
@@ -164,7 +163,7 @@ void SCH_Dispatch_Task(void){
        SCH_Delete_Task(temtask.TaskID);
        if (temtask.Period != 0)
        {
-          SCH_Add_Task(temtask.pTask, temtask.Period, temtask.Period);
+          SCH_Add_Task(temtask.pTask, temtask.Period*TICK, temtask.Period *TICK);
        }
     }
 	// Report system status
